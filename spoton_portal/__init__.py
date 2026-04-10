@@ -42,7 +42,7 @@ def create_app(test_config=None):
 
     @app.get("/favicon.ico")
     def favicon():
-        return ("", 204)
+        return app.send_static_file("favicon.ico")
 
     @app.get("/api/health")
     def health_check():
