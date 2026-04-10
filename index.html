@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpotOn File Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <section class="screen login-screen active" data-screen="login">
+    <div class="login-panel">
+      <div class="login-copy">
+        <h1>SpotOn File Portal</h1>
+        <p>Internal student management and file sharing system</p>
+      </div>
+
+      <form id="loginForm" class="form-grid">
+        <label class="field">
+          <span>Username</span>
+          <input id="usernameInput" type="text" placeholder="Enter username">
+        </label>
+
+        <label class="field">
+          <span>Password</span>
+          <input id="passwordInput" type="password" placeholder="Enter password">
+        </label>
+
+        <p class="login-help">Use `admin / admin123` or `staff / staff123`.</p>
+        <p class="status-message" id="loginMessage" hidden></p>
+
+        <button id="loginButton" type="submit" class="button button-primary button-block">Login</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="screen app-screen" data-screen="app">
+    <header class="topbar">
+      <div>
+        <h2>SpotOn File Portal</h2>
+        <p>Internal Student Management + File Sharing System</p>
+      </div>
+
+      <div class="topbar-search">
+        <label class="header-search" for="globalSearchInput">
+          <span>Search students or files</span>
+          <input
+            id="globalSearchInput"
+            type="search"
+            placeholder="Search by student ID, name, phone, email, or file..."
+            autocomplete="off"
+          >
+        </label>
+        <div class="search-results" id="globalSearchResults" hidden></div>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="user-badge">
+          <span class="user-badge-label">Logged in as</span>
+          <strong id="currentUserText">-</strong>
+        </div>
+        <button id="logoutButton" class="button button-secondary" type="button">Logout</button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="card dashboard-stats">
+        <div class="stat-item">
+          <span class="stat-icon">👥</span>
+          <div class="stat-info">
+            <span class="stat-label">Total Students</span>
+            <strong id="totalStudentsStat">0</strong>
+          </div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">📁</span>
+          <div class="stat-info">
+            <span class="stat-label">Total Files</span>
+            <strong id="totalFilesStat">0</strong>
+          </div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">💾</span>
+          <div class="stat-info">
+            <span class="stat-label">Storage Used</span>
+            <strong id="storageUsedStat">0 MB</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-head">
+          <div>
+            <h3>Storage Usage</h3>
+            <p id="storageText">Used: 0 MB / 10 GB</p>
+          </div>
+        </div>
+        <div class="progress-bar" aria-label="Storage usage">
+          <span id="storageBar"></span>
+        </div>
+      </section>
+
+      <nav class="card breadcrumb" aria-label="Breadcrumb">
+        <button class="crumb-link active" id="crumbHome" type="button">Home</button>
+        <span class="crumb-separator">></span>
+        <button class="crumb-link" id="crumbCountry" type="button" disabled>Country</button>
+        <span class="crumb-separator">></span>
+        <button class="crumb-link" id="crumbCourse" type="button" disabled>Course</button>
+        <span class="crumb-separator">></span>
+        <button class="crumb-link" id="crumbStudent" type="button" disabled>Student</button>
+      </nav>
+
+      <section class="view active" data-view="countries">
+        <section class="card">
+          <div class="section-head section-head-row">
+            <div>
+              <h3>Welcome to SpotOn File Portal</h3>
+              <p>Select a country to manage students, or view all students at once.</p>
+            </div>
+            <div class="section-actions">
+              <button id="viewAllStudentsButton" class="button button-primary" type="button">View All Students</button>
+            </div>
+          </div>
+          <div class="selection-grid" id="countryGrid"></div>
+        </section>
+      </section>
+
+      <section class="view" data-view="all-students">
+        <section class="card">
+          <div class="section-head section-head-row">
+            <div>
+              <h3>All Students</h3>
+              <p>View and manage all students across all countries and courses.</p>
+            </div>
+            <div class="section-actions">
+              <button id="backToHomeButton" class="button button-secondary" type="button">Back to Home</button>
+            </div>
+          </div>
+
+          <div class="filters-grid">
+            <label class="field">
+              <span>Search Students</span>
+              <input id="allStudentsSearchInput" type="search" placeholder="Search by ID, name, phone, or email...">
+            </label>
+
+            <label class="field">
+              <span>Filter by Country</span>
+              <select id="allStudentsCountryFilter">
+                <option value="">All Countries</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Uzbekistan">Uzbekistan</option>
+                <option value="Tajikistan">Tajikistan</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Filter by Course</span>
+              <select id="allStudentsCourseFilter">
+                <option value="">All Courses</option>
+                <option value="MBBS">MBBS</option>
+                <option value="BSc Nursing">BSc Nursing</option>
+                <option value="BBA">BBA</option>
+                <option value="MBA">MBA</option>
+                <option value="BSc">BSc</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Filter by Status</span>
+              <select id="allStudentsStatusFilter">
+                <option value="">All Statuses</option>
+                <option value="Application Created">Application Created</option>
+                <option value="Application In Progress">Application In Progress</option>
+                <option value="Application Pending">Application Pending</option>
+                <option value="Application Rejected">Application Rejected</option>
+                <option value="Application Approved">Application Approved</option>
+                <option value="Visa Approved">Visa Approved</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table" id="allStudentsTable">
+              <thead>
+                <tr>
+                  <th>Student ID</th>
+                  <th>Name</th>
+                  <th>Country</th>
+                  <th>Course</th>
+                  <th>Phone Number</th>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Last Updated</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="allStudentsTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="empty-state" id="allStudentsEmptyState" hidden>
+            <h4>No students found</h4>
+            <p>Try adjusting your search or filters.</p>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" data-view="courses">
+        <section class="card">
+          <div class="section-head section-head-row">
+            <div>
+              <h3 id="courseTitle">Select Course</h3>
+              <p id="courseSubtitle">Choose a course for the selected country.</p>
+            </div>
+            <button id="backToCountriesButton" class="button button-secondary" type="button">Back to Countries</button>
+          </div>
+          <div class="selection-grid" id="courseGrid"></div>
+        </section>
+      </section>
+
+      <section class="view" data-view="students">
+        <section class="card">
+          <div class="section-head section-head-row">
+            <div>
+              <h3 id="studentsTitle">Students</h3>
+              <p id="studentsSubtitle">Manage students under the selected country and course.</p>
+            </div>
+            <div class="section-actions">
+              <p class="section-note" id="studentsPermissionNote" hidden>Staff can view and upload documents but cannot change student records.</p>
+              <button id="addStudentButton" class="button button-primary" type="button">Add New Student</button>
+            </div>
+          </div>
+
+          <label class="field search-field">
+            <span>Search Students</span>
+            <input id="studentSearchInput" type="search" placeholder="Search by student ID, name, phone, or email...">
+          </label>
+
+          <div class="table-wrap">
+            <table class="data-table" id="studentsTable">
+              <thead>
+                <tr>
+                  <th>Student ID</th>
+                  <th>Name</th>
+                  <th>Phone Number</th>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Last Updated</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="studentsTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="empty-state" id="studentsEmptyState" hidden>
+            <h4>No students available</h4>
+            <p>Add a student to begin managing files for this course.</p>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" data-view="student-detail">
+        <section class="card">
+          <div class="section-head section-head-row">
+            <div>
+              <h3 id="detailTitle">Student Detail</h3>
+              <p id="detailSubtitle">Student information and documents</p>
+            </div>
+            <div class="section-actions">
+              <button id="editStudentButton" class="button button-secondary" type="button">Edit Student</button>
+              <button id="backToStudentsButton" class="button button-secondary" type="button">Back to Students</button>
+            </div>
+          </div>
+
+          <div class="detail-grid">
+            <div class="info-card"><span class="info-label">Student ID</span><strong id="studentNumberValue">-</strong></div>
+            <div class="info-card"><span class="info-label">Name</span><strong id="studentNameValue">-</strong></div>
+            <div class="info-card"><span class="info-label">Phone Number</span><strong id="studentPhoneValue">-</strong></div>
+            <div class="info-card"><span class="info-label">Email</span><strong id="studentEmailValue">-</strong></div>
+            <div class="info-card"><span class="info-label">Status</span><strong id="studentStatusValue">-</strong></div>
+          </div>
+
+          <div class="status-editor" id="statusEditor">
+            <label class="field">
+              <span>Update Status</span>
+              <select id="studentStatusSelect">
+                <option value="Application Created">Application Created</option>
+                <option value="Application In Progress">Application In Progress</option>
+                <option value="Application Pending">Application Pending</option>
+                <option value="Application Rejected">Application Rejected</option>
+                <option value="Application Approved">Application Approved</option>
+                <option value="Visa Approved">Visa Approved</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <h3>Student Files</h3>
+              <p>Upload and manage documents for this student.</p>
+            </div>
+          </div>
+
+          <div class="upload-grid">
+            <label class="field">
+              <span>Select File</span>
+              <input id="fileInput" class="file-input" type="file">
+            </label>
+            <div class="upload-actions">
+              <button id="uploadButton" class="button button-primary" type="button">Upload File</button>
+            </div>
+          </div>
+
+          <p class="status-message" id="appMessage" hidden></p>
+
+          <label class="field search-field">
+            <span>Search Files</span>
+            <input id="fileSearchInput" type="search" placeholder="Search files inside this student...">
+          </label>
+
+          <div class="table-wrap">
+            <table class="data-table" id="filesTable">
+              <thead>
+                <tr>
+                  <th>File Type</th>
+                  <th>File Name</th>
+                  <th>File Size</th>
+                  <th>Upload Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="filesTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="empty-state" id="filesEmptyState" hidden>
+            <h4>No files uploaded</h4>
+            <p>Upload a document to store it under this student.</p>
+          </div>
+        </section>
+      </section>
+    </main>
+  </section>
+
+  <script src="./script.js"></script>
+</body>
+</html>
