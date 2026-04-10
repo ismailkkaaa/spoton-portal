@@ -4,12 +4,17 @@ from http import HTTPStatus
 from flask import Flask, jsonify
 from werkzeug.exceptions import HTTPException
 
-from .config import Config
+from .config import BASE_DIR, Config
 from .db import close_db, init_app
 
 
 def create_app(test_config=None):
-    app = Flask(__name__, instance_relative_config=True)
+    app = Flask(
+        __name__,
+        instance_relative_config=True,
+        static_folder=str(BASE_DIR),
+        static_url_path="",
+    )
     app.config.from_object(Config)
 
     if test_config:
@@ -30,6 +35,10 @@ def create_app(test_config=None):
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(students_bp, url_prefix="/api")
     app.register_blueprint(files_bp, url_prefix="/api")
+
+    @app.get("/")
+    def index():
+        return app.send_static_file("index.html")
 
     @app.get("/api/health")
     def health_check():
