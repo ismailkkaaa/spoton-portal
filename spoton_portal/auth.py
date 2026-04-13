@@ -1,9 +1,15 @@
+from datetime import datetime, timezone
+
 from flask import Blueprint, current_app, jsonify, request, session
 
 from .utils import country_from_slug, json_error, safe_route
 
 
 auth_bp = Blueprint("auth", __name__)
+
+
+def current_timestamp():
+    return datetime.now(timezone.utc).isoformat()
 
 
 @auth_bp.post("/login")
@@ -34,6 +40,7 @@ def login():
     session["user"] = {"username": username, "role": user["role"]}
     session["selected_country"] = None
     session["country_authenticated"] = user["role"] == "Admin"
+    session["last_activity"] = current_timestamp()
     current_app.logger.info("Login successful for username=%s role=%s", username, user["role"])
     return jsonify(
         {
@@ -73,6 +80,7 @@ def country_login():
 
     session["selected_country"] = country
     session["country_authenticated"] = True
+    session["last_activity"] = current_timestamp()
     current_app.logger.info("Country login successful for username=%s country=%s", username, country)
     return jsonify(
         {

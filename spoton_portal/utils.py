@@ -28,14 +28,10 @@ COUNTRY_COURSES = {
 }
 
 VALID_STATUSES = {
-    "Applied",
-    "Processing",
-    "Visa Approved",
     "Application Created",
-    "Application In Progress",
-    "Application Pending",
-    "Application Rejected",
-    "Application Approved",
+    "In Progress",
+    "Pending",
+    "Rejected",
 }
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 PHONE_PATTERN = re.compile(r"^[0-9+\-\s()]{6,20}$")

@@ -1,1131 +1,662 @@
-const loginForm = document.getElementById("loginForm");
+const COUNTRIES = ["Georgia", "Uzbekistan", "Tajikistan"];
+const AUTO_LOGOUT_MS = 6 * 60 * 60 * 1000;
+
+const screens = {
+  mainLogin: document.getElementById("mainLoginScreen"),
+  countrySelection: document.getElementById("countrySelectionScreen"),
+  countryLogin: document.getElementById("countryLoginScreen"),
+  app: document.getElementById("appScreen")
+};
+
+const mainLoginForm = document.getElementById("mainLoginForm");
+const roleInput = document.getElementById("roleInput");
 const usernameInput = document.getElementById("usernameInput");
 const passwordInput = document.getElementById("passwordInput");
-const loginButton = document.getElementById("loginButton");
-const loginMessage = document.getElementById("loginMessage");
-const logoutButton = document.getElementById("logoutButton");
-const currentUserText = document.getElementById("currentUserText");
-const globalSearchInput = document.getElementById("globalSearchInput");
-const globalSearchResults = document.getElementById("globalSearchResults");
-const appMessage = document.getElementById("appMessage");
+const mainLoginButton = document.getElementById("mainLoginButton");
+const mainLoginMessage = document.getElementById("mainLoginMessage");
+
 const countryGrid = document.getElementById("countryGrid");
-const courseGrid = document.getElementById("courseGrid");
+const countrySelectionMessage = document.getElementById("countrySelectionMessage");
+const countrySelectionLogoutButton = document.getElementById("countrySelectionLogoutButton");
+
+const countryLoginForm = document.getElementById("countryLoginForm");
+const countryLoginTitle = document.getElementById("countryLoginTitle");
+const countryLoginSubtitle = document.getElementById("countryLoginSubtitle");
+const countryUsernameInput = document.getElementById("countryUsernameInput");
+const countryPasswordInput = document.getElementById("countryPasswordInput");
+const countryLoginButton = document.getElementById("countryLoginButton");
+const countryLoginMessage = document.getElementById("countryLoginMessage");
+const backToCountriesButton = document.getElementById("backToCountriesButton");
+
+const headerCountryText = document.getElementById("headerCountryText");
+const countryFilterField = document.getElementById("countryFilterField");
+const countryFilterSelect = document.getElementById("countryFilterSelect");
+const searchInput = document.getElementById("searchInput");
+const userChip = document.getElementById("userChip");
+const logoutButton = document.getElementById("logoutButton");
+const appMessage = document.getElementById("appMessage");
+
+const studentsCount = document.getElementById("studentsCount");
+const filesCount = document.getElementById("filesCount");
+const storageCount = document.getElementById("storageCount");
+
+const newStudentButton = document.getElementById("newStudentButton");
+const studentForm = document.getElementById("studentForm");
+const studentFormMode = document.getElementById("studentFormMode");
+const studentFormStudentId = document.getElementById("studentFormStudentId");
+const studentNameInput = document.getElementById("studentNameInput");
+const studentPhoneInput = document.getElementById("studentPhoneInput");
+const studentEmailInput = document.getElementById("studentEmailInput");
+const studentCountryInput = document.getElementById("studentCountryInput");
+const studentCourseInput = document.getElementById("studentCourseInput");
+const studentStatusInput = document.getElementById("studentStatusInput");
+const cancelStudentFormButton = document.getElementById("cancelStudentFormButton");
+const saveStudentButton = document.getElementById("saveStudentButton");
 const studentsTableBody = document.getElementById("studentsTableBody");
 const studentsEmptyState = document.getElementById("studentsEmptyState");
-const studentsTitle = document.getElementById("studentsTitle");
-const studentsSubtitle = document.getElementById("studentsSubtitle");
-const studentsPermissionNote = document.getElementById("studentsPermissionNote");
-const addStudentButton = document.getElementById("addStudentButton");
-const studentSearchInput = document.getElementById("studentSearchInput");
-const fileSearchInput = document.getElementById("fileSearchInput");
+
+const editStudentButton = document.getElementById("editStudentButton");
+const deleteStudentButton = document.getElementById("deleteStudentButton");
+const studentDetailEmpty = document.getElementById("studentDetailEmpty");
+const studentDetailPanel = document.getElementById("studentDetailPanel");
+const detailStudentId = document.getElementById("detailStudentId");
+const detailStudentName = document.getElementById("detailStudentName");
+const detailStudentCourse = document.getElementById("detailStudentCourse");
+const detailLastUpdated = document.getElementById("detailLastUpdated");
+const detailStudentPhone = document.getElementById("detailStudentPhone");
+const detailStudentEmail = document.getElementById("detailStudentEmail");
+const detailStudentCountry = document.getElementById("detailStudentCountry");
+const detailStatusSelect = document.getElementById("detailStatusSelect");
+
+const fileInput = document.getElementById("fileInput");
+const uploadFileButton = document.getElementById("uploadFileButton");
 const filesTableBody = document.getElementById("filesTableBody");
 const filesEmptyState = document.getElementById("filesEmptyState");
-const fileInput = document.getElementById("fileInput");
-const uploadButton = document.getElementById("uploadButton");
-const detailTitle = document.getElementById("detailTitle");
-const detailSubtitle = document.getElementById("detailSubtitle");
-const editStudentButton = document.getElementById("editStudentButton");
-const studentNumberValue = document.getElementById("studentNumberValue");
-const studentNameValue = document.getElementById("studentNameValue");
-const studentPhoneValue = document.getElementById("studentPhoneValue");
-const studentEmailValue = document.getElementById("studentEmailValue");
-const studentStatusValue = document.getElementById("studentStatusValue");
-const statusEditor = document.getElementById("statusEditor");
-const studentStatusSelect = document.getElementById("studentStatusSelect");
-const storageText = document.getElementById("storageText");
-const storageBar = document.getElementById("storageBar");
-const screens = document.querySelectorAll(".screen");
-const views = document.querySelectorAll(".view");
-const crumbHome = document.getElementById("crumbHome");
-const crumbCountry = document.getElementById("crumbCountry");
-const crumbCourse = document.getElementById("crumbCourse");
-const crumbStudent = document.getElementById("crumbStudent");
-const backToCountriesButton = document.getElementById("backToCountriesButton");
-const backToStudentsButton = document.getElementById("backToStudentsButton");
-const courseTitle = document.getElementById("courseTitle");
-const courseSubtitle = document.getElementById("courseSubtitle");
-const totalStudentsStat = document.getElementById("totalStudentsStat");
-const totalFilesStat = document.getElementById("totalFilesStat");
-const storageUsedStat = document.getElementById("storageUsedStat");
-const viewAllStudentsButton = document.getElementById("viewAllStudentsButton");
-const backToHomeButton = document.getElementById("backToHomeButton");
-const allStudentsSearchInput = document.getElementById("allStudentsSearchInput");
-const allStudentsCountryFilter = document.getElementById("allStudentsCountryFilter");
-const allStudentsCourseFilter = document.getElementById("allStudentsCourseFilter");
-const allStudentsStatusFilter = document.getElementById("allStudentsStatusFilter");
-const allStudentsTableBody = document.getElementById("allStudentsTableBody");
-const allStudentsEmptyState = document.getElementById("allStudentsEmptyState");
-
-const SESSION_KEY = "spoton-student-portal-session";
-const TOTAL_STORAGE_MB = 10 * 1024;
-const COUNTRY_PREFIXES = {
-  Georgia: "GEO",
-  Uzbekistan: "UZB",
-  Tajikistan: "TJK"
-};
-
-const users = {
-  admin: { password: "admin123", role: "Admin" },
-  staff: { password: "staff123", role: "Staff" }
-};
-
-const countryCourseMap = {
-  Georgia: ["MBBS", "BSc Nursing", "BBA", "MBA"],
-  Uzbekistan: ["MBBS", "BSc"],
-  Tajikistan: ["MBBS", "BSc"]
-};
-
-const dataStore = {
-  Georgia: {
-    MBBS: [
-      {
-        id: crypto.randomUUID(),
-        studentNumber: "GEO-1001",
-        name: "Aarav Sharma",
-        phone: "+995 555 100 101",
-        email: "aarav.sharma@example.com",
-        status: "Application Created",
-        lastUpdated: "Apr 10, 2026",
-        files: [
-          { id: crypto.randomUUID(), name: "Passport_Copy.pdf", sizeLabel: "2.4 MB", sizeMb: 2.4, date: "Apr 10, 2026" },
-          { id: crypto.randomUUID(), name: "Admission_Form.pdf", sizeLabel: "1.3 MB", sizeMb: 1.3, date: "Apr 09, 2026" }
-        ]
-      },
-      {
-        id: crypto.randomUUID(),
-        studentNumber: "GEO-1002",
-        name: "Nino Beridze",
-        phone: "+995 555 220 220",
-        email: "nino.beridze@example.com",
-        status: "Application In Progress",
-        lastUpdated: "Apr 08, 2026",
-        files: [
-          { id: crypto.randomUUID(), name: "Offer_Letter.pdf", sizeLabel: "1.8 MB", sizeMb: 1.8, date: "Apr 08, 2026" }
-        ]
-      }
-    ],
-    "BSc Nursing": [
-      {
-        id: crypto.randomUUID(),
-        studentNumber: "GEO-1003",
-        name: "Maya George",
-        phone: "+995 555 300 410",
-        email: "maya.george@example.com",
-        status: "Visa Approved",
-        lastUpdated: "Apr 05, 2026",
-        files: []
-      }
-    ],
-    BBA: [],
-    MBA: []
-  },
-  Uzbekistan: {
-    MBBS: [
-      {
-        id: crypto.randomUUID(),
-        studentNumber: "UZB-2001",
-        name: "Rahul Verma",
-        phone: "+998 90 111 2222",
-        email: "rahul.verma@example.com",
-        status: "Application Pending",
-        lastUpdated: "Apr 07, 2026",
-        files: [
-          { id: crypto.randomUUID(), name: "Visa_Document.pdf", sizeLabel: "1.9 MB", sizeMb: 1.9, date: "Apr 07, 2026" }
-        ]
-      }
-    ],
-    BSc: []
-  },
-  Tajikistan: {
-    MBBS: [],
-    BSc: [
-      {
-        id: crypto.randomUUID(),
-        studentNumber: "TJK-3001",
-        name: "Dilshod Karimov",
-        phone: "+992 900 123 456",
-        email: "dilshod.karimov@example.com",
-        status: "Application Rejected",
-        lastUpdated: "Apr 06, 2026",
-        files: []
-      }
-    ]
-  }
-};
 
 const state = {
   user: null,
-  country: "",
-  course: "",
-  studentId: ""
+  selectedCountry: "",
+  countryAuthenticated: false,
+  pendingCountry: "",
+  activeCountry: "",
+  students: [],
+  summary: { students: 0, files: 0, storage_bytes: 0 },
+  selectedStudentId: ""
 };
 
-function normalizeText(value) {
-  return String(value || "").trim().toLowerCase();
+let autoLogoutTimer = null;
+
+function showScreen(name) {
+  Object.entries(screens).forEach(([screenName, element]) => {
+    element.classList.toggle("active", screenName === name);
+  });
 }
 
-function escapeHtml(value) {
-  const entities = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    "\"": "&quot;",
-    "'": "&#39;"
-  };
-
-  return String(value ?? "").replace(/[&<>"']/g, (character) => entities[character]);
-}
-
-function escapeRegExp(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function highlightText(value, query) {
-  const safeValue = escapeHtml(value);
-  const normalizedQuery = String(query || "").trim();
-  if (!normalizedQuery) return safeValue;
-
-  const pattern = new RegExp(`(${escapeRegExp(normalizedQuery)})`, "ig");
-  return safeValue.replace(pattern, "<mark>$1</mark>");
-}
-
-function setStatusMessage(target, type, text) {
-  target.hidden = false;
-  target.className = `status-message ${type}`;
-  target.textContent = text;
-}
-
-function clearStatusMessage(target) {
+function clearMessage(target) {
   target.hidden = true;
   target.className = "status-message";
   target.textContent = "";
 }
 
-function showScreen(screenName) {
-  screens.forEach((screen) => {
-    screen.classList.toggle("active", screen.dataset.screen === screenName);
-  });
+function setMessage(target, type, text) {
+  target.hidden = false;
+  target.className = `status-message ${type}`;
+  target.textContent = text;
 }
 
-function showView(viewName) {
-  views.forEach((view) => {
-    view.classList.toggle("active", view.dataset.view === viewName);
-  });
-}
-
-function getSession() {
-  const raw = sessionStorage.getItem(SESSION_KEY);
-  if (!raw) return null;
-
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
+function setLoading(button, loadingText, isLoading) {
+  if (isLoading) {
+    button.dataset.originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = loadingText;
+    return;
   }
+
+  button.disabled = false;
+  button.textContent = button.dataset.originalText || button.textContent;
 }
 
-function saveSession() {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ user: state.user }));
+function escapeHtml(value) {
+  const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" };
+  return String(value ?? "").replace(/[&<>"']/g, (character) => map[character]);
 }
 
-function clearSession() {
-  sessionStorage.removeItem(SESSION_KEY);
-}
-
-function ensureAuthenticated() {
-  if (state.user) return true;
-  clearSession();
-  showScreen("login");
-  setStatusMessage(loginMessage, "error", "Please log in to continue.");
-  return false;
-}
-
-function getCurrentStudents() {
-  if (!state.country || !state.course) return [];
-  return dataStore[state.country][state.course];
-}
-
-function getCurrentStudent() {
-  return getCurrentStudents().find((student) => student.id === state.studentId) || null;
-}
-
-function getTodayLabel() {
-  return new Date().toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric"
-  });
-}
-
-function getTotalUsedStorageMb() {
-  return Object.values(dataStore)
-    .flatMap((country) => Object.values(country))
-    .flat()
-    .flatMap((student) => student.files)
-    .reduce((total, file) => total + (file.sizeMb || 0), 0);
-}
-
-function formatStorage(totalMb) {
-  if (totalMb >= 1024) return `${(totalMb / 1024).toFixed(1)} GB`;
-  return `${Math.round(totalMb)} MB`;
-}
-
-function updateStorageUsage() {
-  const usedMb = getTotalUsedStorageMb();
-  const percent = Math.min((usedMb / TOTAL_STORAGE_MB) * 100, 100);
-  storageText.textContent = `Used: ${formatStorage(usedMb)} / ${formatStorage(TOTAL_STORAGE_MB)}`;
-  storageBar.style.width = `${percent}%`;
-}
-
-function updateDashboardStats() {
-  const allStudents = getAllStudents();
-  const totalStudents = allStudents.length;
-  
-  const totalFiles = allStudents.reduce((count, { student }) => 
-    count + student.files.length, 0
-  );
-  
-  const usedMb = getTotalUsedStorageMb();
-  
-  totalStudentsStat.textContent = totalStudents;
-  totalFilesStat.textContent = totalFiles;
-  storageUsedStat.textContent = formatStorage(usedMb);
-  
-  updateStorageUsage();
-}
-
-function updateHeader() {
-  currentUserText.textContent = state.user ? `${state.user.username} - ${state.user.role}` : "-";
+function formatStorage(bytes) {
+  const size = Number(bytes || 0);
+  if (size >= 1024 * 1024 * 1024) return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  if (size >= 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+  if (size >= 1024) return `${(size / 1024).toFixed(2)} KB`;
+  return `${size} B`;
 }
 
 function isAdmin() {
   return state.user?.role === "Admin";
 }
 
-function canDeleteFiles() {
-  return isAdmin();
+function currentCountryScope() {
+  return isAdmin() ? state.activeCountry : state.selectedCountry;
 }
 
-function canManageStudents() {
-  return isAdmin();
+function selectedStudent() {
+  return state.students.find((student) => student.student_id === state.selectedStudentId) || null;
 }
 
-function getStatusClassName(status) {
-  switch (status) {
-    case "Application Created":
-      return "status-created";
-    case "Application In Progress":
-      return "status-in-progress";
-    case "Application Pending":
-      return "status-pending";
-    case "Application Rejected":
-      return "status-rejected";
-    case "Application Approved":
-    case "Visa Approved":
-      return "status-approved";
-    default:
-      return "status-created";
+async function apiRequest(url, options = {}) {
+  const response = await fetch(url, {
+    credentials: "same-origin",
+    headers: {
+      Accept: "application/json",
+      ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+      ...(options.headers || {})
+    },
+    ...options
+  });
+
+  const isJson = response.headers.get("content-type")?.includes("application/json");
+  const payload = isJson ? await response.json() : null;
+
+  if (!response.ok) {
+    const error = new Error(payload?.error || "Request failed");
+    error.status = response.status;
+    throw error;
+  }
+
+  return payload;
+}
+
+async function safeLoad(action) {
+  try {
+    await action();
+  } catch (error) {
+    if (error.status === 401) {
+      await logout(true);
+      return;
+    }
+    setMessage(appMessage, "error", error.message);
   }
 }
 
-function renderStatusBadge(status) {
-  return `<span class="status-badge ${getStatusClassName(status)}">${escapeHtml(status)}</span>`;
-}
-
-function syncRolePermissions() {
-  const admin = isAdmin();
-  addStudentButton.hidden = !admin;
-  editStudentButton.hidden = !admin;
-  statusEditor.hidden = !admin;
-  studentStatusSelect.disabled = !admin;
-  studentsPermissionNote.hidden = admin;
-}
-
-function updateBreadcrumbs() {
-  crumbCountry.textContent = state.country || "Country";
-  crumbCountry.disabled = !state.country;
-  crumbCourse.textContent = state.course || "Course";
-  crumbCourse.disabled = !state.course;
-  const student = getCurrentStudent();
-  crumbStudent.textContent = student ? student.name : "Student";
-  crumbStudent.disabled = !student;
-}
-
-function getAllStudents() {
-  return Object.entries(dataStore).flatMap(([countryName, courses]) =>
-    Object.entries(courses).flatMap(([courseName, students]) =>
-      students.map((student) => ({
-        student,
-        country: countryName,
-        course: courseName
-      }))
-    )
-  );
-}
-
-function getStudentSearchText(student) {
-  return [
-    student.studentNumber,
-    student.name,
-    student.phone,
-    student.email
-  ].map(normalizeText).join(" ");
-}
-
-function matchesStudentQuery(student, query) {
-  if (!query) return true;
-  return getStudentSearchText(student).includes(normalizeText(query));
-}
-
-function matchesFileQuery(file, query) {
-  if (!query) return true;
-  return normalizeText(file.name).includes(normalizeText(query));
-}
-
-function getFileType(fileName) {
-  const extension = fileName.split('.').pop().toLowerCase();
-  
-  const pdfExtensions = ['pdf'];
-  const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'];
-  const docExtensions = ['doc', 'docx', 'txt', 'rtf', 'odt', 'xls', 'xlsx', 'ppt', 'pptx'];
-  
-  if (pdfExtensions.includes(extension)) {
-    return { type: 'pdf', label: 'PDF', className: 'file-type-pdf' };
+async function logout(showExpiredMessage = false) {
+  try {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
+  } catch {
+    // Local reset is enough if server logout fails.
   }
-  
-  if (imageExtensions.includes(extension)) {
-    return { type: 'image', label: extension.toUpperCase(), className: 'file-type-image' };
+
+  state.user = null;
+  state.selectedCountry = "";
+  state.countryAuthenticated = false;
+  state.pendingCountry = "";
+  state.activeCountry = "";
+  state.students = [];
+  state.summary = { students: 0, files: 0, storage_bytes: 0 };
+  state.selectedStudentId = "";
+  clearTimeout(autoLogoutTimer);
+  resetStudentForm();
+  renderStudents();
+  renderStudentDetail();
+  clearMessage(appMessage);
+  clearMessage(countrySelectionMessage);
+  clearMessage(countryLoginMessage);
+
+  if (showExpiredMessage) {
+    setMessage(mainLoginMessage, "error", "You have been logged out after 6 hours of inactivity.");
+  } else {
+    clearMessage(mainLoginMessage);
   }
-  
-  if (docExtensions.includes(extension)) {
-    return { type: 'doc', label: extension.toUpperCase(), className: 'file-type-doc' };
-  }
-  
-  return { type: 'other', label: extension.toUpperCase() || 'FILE', className: 'file-type-other' };
+
+  showScreen("mainLogin");
 }
 
-function getMatchingStudents(query) {
-  const normalizedQuery = normalizeText(query);
-  if (!normalizedQuery) return [];
-  return getAllStudents().filter(({ student }) => matchesStudentQuery(student, normalizedQuery));
+function resetAutoLogoutTimer() {
+  clearTimeout(autoLogoutTimer);
+  if (!state.user) return;
+  autoLogoutTimer = window.setTimeout(() => logout(true), AUTO_LOGOUT_MS);
 }
 
-function getMatchingFiles(query) {
-  const normalizedQuery = normalizeText(query);
-  if (!normalizedQuery) return [];
-
-  return getAllStudents().flatMap(({ student, country, course }) =>
-    student.files
-      .filter((file) => matchesFileQuery(file, normalizedQuery))
-      .map((file) => ({
-        file,
-        student,
-        country,
-        course
-      }))
-  );
+function bindActivityListeners() {
+  ["click", "keydown", "mousemove", "touchstart", "scroll"].forEach((eventName) => {
+    window.addEventListener(eventName, () => {
+      if (state.user) resetAutoLogoutTimer();
+    }, { passive: true });
+  });
 }
 
-function generateStudentNumber(country) {
-  const prefix = COUNTRY_PREFIXES[country] || "STD";
-  const allStudentNumbers = getAllStudents()
-    .filter((entry) => entry.country === country)
-    .map(({ student }) => student.studentNumber);
-  
-  const maxNumber = allStudentNumbers.reduce((max, num) => {
-    const match = num.match(/\d+/);
-    return match ? Math.max(max, parseInt(match[0], 10)) : max;
-  }, 0);
-  
-  return `${prefix}-${String(maxNumber + 1).padStart(4, '0')}`;
+function populateCountryOptions() {
+  studentCountryInput.innerHTML = COUNTRIES.map((country) => `<option value="${country}">${country}</option>`).join("");
+  countryFilterSelect.innerHTML = [
+    `<option value="">All Countries</option>`,
+    ...COUNTRIES.map((country) => `<option value="${country}">${country}</option>`)
+  ].join("");
 }
 
-function renderCountries() {
-  countryGrid.innerHTML = Object.keys(countryCourseMap)
-    .map((country) => `
-      <button class="selection-card" type="button" data-country="${country}">
-        <strong>${country}</strong>
-        <span>Open courses and student records</span>
-      </button>
-    `)
-    .join("");
+function renderCountrySelection() {
+  countryGrid.innerHTML = COUNTRIES.map((country) => `
+    <button class="country-card" type="button" data-country="${country}">
+      <strong>${country}</strong>
+      <span>Continue to ${country} access</span>
+    </button>
+  `).join("");
 }
 
-function renderCourses() {
-  if (!state.country) return;
+function renderHeader() {
+  userChip.textContent = state.user ? `${state.user.username} · ${state.user.role}` : "-";
+  const label = isAdmin() ? (state.activeCountry || "All Countries") : (state.selectedCountry || "-");
+  headerCountryText.textContent = `Current Country: ${label}`;
+  countryFilterField.hidden = !isAdmin();
+  countryFilterSelect.value = state.activeCountry || "";
+}
 
-  courseTitle.textContent = `${state.country} Courses`;
-  courseSubtitle.textContent = "Select a course to view students.";
-  courseGrid.innerHTML = countryCourseMap[state.country]
-    .map((course) => `
-      <button class="selection-card" type="button" data-course="${course}">
-        <strong>${course}</strong>
-        <span>View students in this course</span>
-      </button>
-    `)
-    .join("");
+function renderSummary() {
+  studentsCount.textContent = state.summary.students ?? 0;
+  filesCount.textContent = state.summary.files ?? 0;
+  storageCount.textContent = formatStorage(state.summary.storage_bytes);
 }
 
 function renderStudents() {
-  const localSearch = normalizeText(studentSearchInput.value);
-  const globalSearch = normalizeText(globalSearchInput.value);
-  const search = localSearch || globalSearch;
-  const students = getCurrentStudents().filter((student) => matchesStudentQuery(student, search));
+  studentsEmptyState.hidden = state.students.length > 0;
+  studentsTableBody.innerHTML = state.students.map((student) => `
+    <tr class="${student.student_id === state.selectedStudentId ? "selected-row" : ""}">
+      <td>${escapeHtml(student.student_id)}</td>
+      <td>${escapeHtml(student.name)}</td>
+      <td>${escapeHtml(student.country)}</td>
+      <td>${escapeHtml(student.course)}</td>
+      <td><span class="status-badge">${escapeHtml(student.status)}</span></td>
+      <td>${escapeHtml(String(student.file_count ?? 0))}</td>
+      <td>${escapeHtml(student.last_updated)}</td>
+      <td><button class="link-button" type="button" data-open-student="${student.student_id}">Open</button></td>
+    </tr>
+  `).join("");
+}
 
-  studentsTitle.textContent = `${state.country} - ${state.course}`;
-  studentsSubtitle.textContent = "Manage students and open their document records.";
-  studentsEmptyState.hidden = students.length > 0;
-  syncRolePermissions();
-
-  if (!students.length) {
-    studentsTableBody.innerHTML = "";
-    studentsEmptyState.querySelector("h4").textContent = search
-      ? "No matching students"
-      : "No students available";
-    studentsEmptyState.querySelector("p").textContent = search
-      ? "Search by student ID, name, phone number, or email."
-      : "Add a student to begin managing files for this course.";
-    return;
-  }
-
-  studentsTableBody.innerHTML = students
-    .map((student) => `
-      <tr class="${search ? "table-match" : ""}">
-        <td>${highlightText(student.studentNumber, search)}</td>
-        <td>${highlightText(student.name, search)}</td>
-        <td>${highlightText(student.phone, search)}</td>
-        <td>${highlightText(student.email, search)}</td>
-        <td>${renderStatusBadge(student.status)}</td>
-        <td>${escapeHtml(student.lastUpdated || "-")}</td>
-        <td><button class="button button-secondary" type="button" data-student-id="${student.id}">Open</button></td>
-      </tr>
-    `)
-    .join("");
+function renderFiles(files) {
+  filesEmptyState.hidden = files.length > 0;
+  filesTableBody.innerHTML = files.map((file) => `
+    <tr>
+      <td>${escapeHtml(file.file_name)}</td>
+      <td>${escapeHtml(formatStorage(file.file_size))}</td>
+      <td>${escapeHtml(file.upload_date)}</td>
+      <td>
+        <div class="row-actions">
+          <button class="button button-secondary" type="button" data-download-file="${file.id}">Download</button>
+          ${isAdmin() ? `<button class="button button-danger" type="button" data-delete-file="${file.id}">Delete</button>` : ""}
+        </div>
+      </td>
+    </tr>
+  `).join("");
 }
 
 function renderStudentDetail() {
-  const student = getCurrentStudent();
+  const student = selectedStudent();
   if (!student) {
-    state.studentId = "";
-    showView("students");
-    updateBreadcrumbs();
+    studentDetailEmpty.hidden = false;
+    studentDetailPanel.hidden = true;
+    editStudentButton.hidden = true;
+    deleteStudentButton.hidden = true;
     return;
   }
 
-  detailTitle.textContent = student.name;
-  detailSubtitle.textContent = `${state.country} - ${state.course}`;
-  studentNumberValue.textContent = student.studentNumber;
-  studentNameValue.textContent = student.name;
-  studentPhoneValue.textContent = student.phone;
-  studentEmailValue.textContent = student.email;
-  studentStatusValue.innerHTML = renderStatusBadge(student.status);
-  studentStatusSelect.value = student.status;
-  syncRolePermissions();
+  studentDetailEmpty.hidden = true;
+  studentDetailPanel.hidden = false;
+  editStudentButton.hidden = !isAdmin();
+  deleteStudentButton.hidden = !isAdmin();
 
-  const localSearch = normalizeText(fileSearchInput.value);
-  const globalSearch = normalizeText(globalSearchInput.value);
-  const search = localSearch || globalSearch;
-  const files = student.files.filter((file) => matchesFileQuery(file, search));
+  detailStudentId.textContent = student.student_id;
+  detailStudentName.textContent = student.name;
+  detailStudentCourse.textContent = student.course;
+  detailLastUpdated.textContent = student.last_updated;
+  detailStudentPhone.textContent = student.phone;
+  detailStudentEmail.textContent = student.email;
+  detailStudentCountry.textContent = student.country;
+  detailStatusSelect.value = student.status;
+  detailStatusSelect.disabled = !isAdmin();
 
-  filesEmptyState.hidden = files.length > 0;
-  if (!files.length) {
-    filesTableBody.innerHTML = "";
-    filesEmptyState.querySelector("h4").textContent = search
-      ? "No matching files"
-      : "No files uploaded";
-    filesEmptyState.querySelector("p").textContent = search
-      ? "Try a different file name."
-      : "Upload a document to store it under this student.";
+  renderFiles(student.files || []);
+}
+
+function resetStudentForm() {
+  studentForm.reset();
+  studentForm.hidden = true;
+  studentFormMode.value = "create";
+  studentFormStudentId.value = "";
+  if (!isAdmin()) {
+    studentCountryInput.value = state.selectedCountry || COUNTRIES[0];
+  }
+}
+
+function openStudentForm(mode, student = null) {
+  if (!isAdmin()) return;
+  studentForm.hidden = false;
+  studentFormMode.value = mode;
+  studentFormStudentId.value = student?.student_id || "";
+  studentNameInput.value = student?.name || "";
+  studentPhoneInput.value = student?.phone || "";
+  studentEmailInput.value = student?.email || "";
+  studentCountryInput.value = student?.country || state.activeCountry || COUNTRIES[0];
+  studentCourseInput.value = student?.course || "";
+  studentStatusInput.value = student?.status || "Application Created";
+}
+
+async function loadDashboard() {
+  const country = currentCountryScope();
+  const search = searchInput.value.trim();
+  const summaryUrl = new URL("/api/dashboard/summary", window.location.origin);
+  const studentsUrl = new URL("/api/students", window.location.origin);
+
+  if (country) {
+    summaryUrl.searchParams.set("country", country);
+    studentsUrl.searchParams.set("country", country);
+  }
+  if (search) {
+    studentsUrl.searchParams.set("q", search);
+  }
+
+  const [summaryPayload, studentsPayload] = await Promise.all([
+    apiRequest(summaryUrl.pathname + summaryUrl.search),
+    apiRequest(studentsUrl.pathname + studentsUrl.search)
+  ]);
+
+  state.summary = summaryPayload.summary;
+  state.students = studentsPayload.students;
+
+  if (state.selectedStudentId && !state.students.some((student) => student.student_id === state.selectedStudentId)) {
+    state.selectedStudentId = "";
+  }
+
+  renderHeader();
+  renderSummary();
+  renderStudents();
+  renderStudentDetail();
+}
+
+async function loadStudentDetail(studentId) {
+  const [studentPayload, filesPayload] = await Promise.all([
+    apiRequest(`/api/students/${encodeURIComponent(studentId)}`),
+    apiRequest(`/api/students/${encodeURIComponent(studentId)}/files`)
+  ]);
+
+  const index = state.students.findIndex((student) => student.student_id === studentId);
+  if (index >= 0) {
+    state.students[index] = {
+      ...state.students[index],
+      ...studentPayload.student,
+      files: filesPayload.files,
+      file_count: filesPayload.files.length
+    };
+  }
+
+  state.selectedStudentId = studentId;
+  renderStudents();
+  renderStudentDetail();
+}
+
+async function refreshAfterMutation(studentId = "") {
+  await loadDashboard();
+  if (studentId && state.students.some((student) => student.student_id === studentId)) {
+    await loadStudentDetail(studentId);
   } else {
-    filesTableBody.innerHTML = files
-      .map((file) => {
-        const fileType = getFileType(file.name);
-        return `
-          <tr class="${search ? "table-match" : ""}">
-            <td>
-              <span class="file-type-icon ${fileType.className}">${fileType.label}</span>
-            </td>
-            <td>${highlightText(file.name, search)}</td>
-            <td>${escapeHtml(file.sizeLabel)}</td>
-            <td>${escapeHtml(file.date)}</td>
-            <td>
-              <div class="file-actions">
-                <button class="button button-secondary" type="button" data-action="download" data-file-id="${file.id}">Download</button>
-                ${canDeleteFiles() ? `<button class="button button-danger" type="button" data-action="delete" data-file-id="${file.id}">Delete</button>` : ""}
-              </div>
-            </td>
-          </tr>
-        `;
-      })
-      .join("");
+    state.selectedStudentId = "";
+    renderStudentDetail();
   }
-
-  updateBreadcrumbs();
 }
 
-function renderAllStudents() {
-  const search = normalizeText(allStudentsSearchInput.value);
-  const countryFilter = allStudentsCountryFilter.value;
-  const courseFilter = allStudentsCourseFilter.value;
-  const statusFilter = allStudentsStatusFilter.value;
+async function restoreSession() {
+  try {
+    const payload = await apiRequest("/api/auth/me");
+    state.user = payload.user;
+    state.selectedCountry = payload.selected_country || "";
+    state.countryAuthenticated = Boolean(payload.country_authenticated);
+    state.activeCountry = isAdmin() ? (state.selectedCountry || "") : state.selectedCountry;
+    newStudentButton.hidden = !isAdmin();
+    studentCountryInput.disabled = !isAdmin();
+    resetAutoLogoutTimer();
 
-  const allStudents = getAllStudents();
-  
-  const filtered = allStudents.filter(({ student, country, course }) => {
-    // Apply search filter
-    if (search && !matchesStudentQuery(student, search)) return false;
-    
-    // Apply country filter
-    if (countryFilter && country !== countryFilter) return false;
-    
-    // Apply course filter
-    if (courseFilter && course !== courseFilter) return false;
-    
-    // Apply status filter
-    if (statusFilter && student.status !== statusFilter) return false;
-    
-    return true;
-  });
+    if (!isAdmin() && !state.countryAuthenticated) {
+      renderCountrySelection();
+      showScreen("countrySelection");
+      return;
+    }
 
-  allStudentsEmptyState.hidden = filtered.length > 0;
-
-  if (!filtered.length) {
-    allStudentsTableBody.innerHTML = "";
-    return;
+    await loadDashboard();
+    showScreen("app");
+  } catch {
+    showScreen("mainLogin");
   }
-
-  allStudentsTableBody.innerHTML = filtered
-    .map(({ student, country, course }) => `
-      <tr class="${search ? "table-match" : ""}">
-        <td>${highlightText(student.studentNumber, search)}</td>
-        <td>${highlightText(student.name, search)}</td>
-        <td>${escapeHtml(country)}</td>
-        <td>${escapeHtml(course)}</td>
-        <td>${highlightText(student.phone, search)}</td>
-        <td>${highlightText(student.email, search)}</td>
-        <td>${renderStatusBadge(student.status)}</td>
-        <td>${escapeHtml(student.lastUpdated || "-")}</td>
-        <td><button class="button button-secondary" type="button" data-student-id="${student.id}" data-country="${country}" data-course="${course}">Open</button></td>
-      </tr>
-    `)
-    .join("");
 }
 
-function openAllStudentsView() {
-  allStudentsSearchInput.value = "";
-  allStudentsCountryFilter.value = "";
-  allStudentsCourseFilter.value = "";
-  allStudentsStatusFilter.value = "";
-  renderAllStudents();
-  showView("all-students");
-  clearStatusMessage(appMessage);
-  renderGlobalSearchResults();
-}
-
-function renderGlobalSearchResults() {
-  const query = globalSearchInput.value.trim();
-  if (!query) {
-    globalSearchResults.hidden = true;
-    globalSearchResults.innerHTML = "";
-    return;
-  }
-
-  const matchingStudents = getMatchingStudents(query).slice(0, 8);
-  const matchingFiles = getMatchingFiles(query).slice(0, 5);
-  const sections = [];
-
-  if (matchingStudents.length) {
-    sections.push(`
-      <section class="search-result-group">
-        <div class="search-result-label">Students</div>
-        ${matchingStudents.map(({ student, country, course }) => `
-          <button
-            class="search-result-item"
-            type="button"
-            data-search-student-id="${student.id}"
-            data-search-country="${country}"
-            data-search-course="${course}"
-          >
-            <strong>${highlightText(student.name, query)}</strong>
-            <span class="search-result-meta">${highlightText(student.studentNumber, query)} | ${highlightText(student.phone, query)} | ${highlightText(student.email, query)}</span>
-            <span class="search-result-meta">${escapeHtml(country)} | ${escapeHtml(course)}</span>
-          </button>
-        `).join("")}
-      </section>
-    `);
-  }
-
-  if (matchingFiles.length) {
-    sections.push(`
-      <section class="search-result-group">
-        <div class="search-result-label">Files</div>
-        ${matchingFiles.map(({ file, student, country, course }) => `
-          <button
-            class="search-result-item"
-            type="button"
-            data-search-student-id="${student.id}"
-            data-search-country="${country}"
-            data-search-course="${course}"
-          >
-            <strong>${highlightText(file.name, query)}</strong>
-            <span class="search-result-meta">${escapeHtml(student.name)} (${escapeHtml(student.studentNumber)})</span>
-            <span class="search-result-meta">${escapeHtml(country)} | ${escapeHtml(course)}</span>
-          </button>
-        `).join("")}
-      </section>
-    `);
-  }
-
-  globalSearchResults.hidden = false;
-  globalSearchResults.innerHTML = sections.length
-    ? sections.join("")
-    : `<div class="search-result-empty">No matching students or files.</div>`;
-}
-
-function openCountriesView() {
-  state.country = "";
-  state.course = "";
-  state.studentId = "";
-  studentSearchInput.value = "";
-  fileSearchInput.value = "";
-  showView("countries");
-  updateBreadcrumbs();
-  clearStatusMessage(appMessage);
-  renderGlobalSearchResults();
-}
-
-function openCoursesView(country) {
-  state.country = country;
-  state.course = "";
-  state.studentId = "";
-  studentSearchInput.value = "";
-  fileSearchInput.value = "";
-  renderCourses();
-  showView("courses");
-  updateBreadcrumbs();
-  clearStatusMessage(appMessage);
-  renderGlobalSearchResults();
-}
-
-function openStudentsView(course) {
-  state.course = course;
-  state.studentId = "";
-  studentSearchInput.value = "";
-  fileSearchInput.value = "";
-  renderStudents();
-  showView("students");
-  updateBreadcrumbs();
-  clearStatusMessage(appMessage);
-  renderGlobalSearchResults();
-}
-
-function openStudentDetail(studentId) {
-  state.studentId = studentId;
-  fileSearchInput.value = "";
-  renderStudentDetail();
-  showView("student-detail");
-  updateBreadcrumbs();
-  clearStatusMessage(appMessage);
-  renderGlobalSearchResults();
-}
-
-function handleLogin(username, password) {
-  const normalizedUsername = normalizeText(username);
-  const normalizedPassword = String(password || "").trim();
-
-  clearStatusMessage(loginMessage);
-
-  if (!normalizedUsername || !normalizedPassword) {
-    setStatusMessage(loginMessage, "error", "Please enter username and password.");
-    return;
-  }
-
-  const user = users[normalizedUsername];
-  if (!user || user.password !== normalizedPassword) {
-    setStatusMessage(loginMessage, "error", "Invalid username or password.");
-    return;
-  }
-
-  state.user = { username: normalizedUsername, role: user.role };
-  saveSession();
-  clearStatusMessage(loginMessage);
-  updateHeader();
-  syncRolePermissions();
-  updateDashboardStats();
-  renderCountries();
-  openCountriesView();
-  showScreen("app");
-}
-
-function addStudent() {
-  if (!canManageStudents()) {
-    setStatusMessage(appMessage, "error", "Only admin can add students.");
-    return;
-  }
-
-  const name = window.prompt("Enter student name:");
-  if (name === null) return;
-
-  const trimmedName = name.trim();
-  if (!trimmedName) {
-    setStatusMessage(appMessage, "error", "Student name cannot be empty.");
-    return;
-  }
-
-  const existing = getCurrentStudents().some(
-    (student) => normalizeText(student.name) === normalizeText(trimmedName)
-  );
-
-  if (existing) {
-    setStatusMessage(appMessage, "error", "A student with that name already exists.");
-    return;
-  }
-
-  const phone = window.prompt("Enter phone number:", "+000 000 000 000");
-  if (phone === null) return;
-  const email = window.prompt("Enter email address:", "student@example.com");
-  if (email === null) return;
-
-  getCurrentStudents().push({
-    id: crypto.randomUUID(),
-    studentNumber: generateStudentNumber(state.country),
-    name: trimmedName,
-    phone: phone.trim() || "-",
-    email: email.trim() || "-",
-    status: "Application Created",
-    lastUpdated: getTodayLabel(),
-    files: []
-  });
-
-  renderStudents();
-  renderGlobalSearchResults();
-  setStatusMessage(appMessage, "success", "Student added successfully.");
-}
-
-function editStudent() {
-  if (!canManageStudents()) {
-    setStatusMessage(appMessage, "error", "Only admin can edit student details.");
-    return;
-  }
-
-  const student = getCurrentStudent();
-  if (!student) return;
-
-  const name = window.prompt("Edit student name:", student.name);
-  if (name === null) return;
-  const trimmedName = name.trim();
-  if (!trimmedName) {
-    setStatusMessage(appMessage, "error", "Student name cannot be empty.");
-    return;
-  }
-
-  const duplicate = getCurrentStudents().some(
-    (entry) => entry.id !== student.id && normalizeText(entry.name) === normalizeText(trimmedName)
-  );
-  if (duplicate) {
-    setStatusMessage(appMessage, "error", "Another student with that name already exists.");
-    return;
-  }
-
-  const phone = window.prompt("Edit phone number:", student.phone);
-  if (phone === null) return;
-  const email = window.prompt("Edit email address:", student.email);
-  if (email === null) return;
-
-  student.name = trimmedName;
-  student.phone = phone.trim() || "-";
-  student.email = email.trim() || "-";
-  student.lastUpdated = getTodayLabel();
-
-  renderStudents();
-  renderStudentDetail();
-  renderGlobalSearchResults();
-  setStatusMessage(appMessage, "success", "Student updated successfully.");
-}
-
-function uploadFileForStudent() {
-  const student = getCurrentStudent();
-  if (!student) return;
-
-  if (!fileInput.files.length) {
-    setStatusMessage(appMessage, "error", "Please choose a file before uploading.");
-    return;
-  }
-
-  const file = fileInput.files[0];
-  const sizeMb = Number((file.size / (1024 * 1024)).toFixed(2));
-  const sizeLabel = sizeMb >= 1
-    ? `${sizeMb.toFixed(2)} MB`
-    : `${Math.max(1, Math.round(file.size / 1024))} KB`;
-
-  student.files.unshift({
-    id: crypto.randomUUID(),
-    name: file.name,
-    sizeLabel,
-    sizeMb: sizeMb > 0 ? sizeMb : file.size / 1024 / 1024,
-    date: getTodayLabel()
-  });
-
-  student.lastUpdated = getTodayLabel();
-  fileInput.value = "";
-  renderStudentDetail();
-  renderGlobalSearchResults();
-  updateDashboardStats();
-  setStatusMessage(appMessage, "success", "File uploaded successfully.");
-}
-
-function deleteFile(fileId) {
-  if (!canDeleteFiles()) {
-    setStatusMessage(appMessage, "error", "Only admin can delete files.");
-    return;
-  }
-
-  const student = getCurrentStudent();
-  if (!student) return;
-
-  const target = student.files.find((file) => file.id === fileId);
-  if (!target) {
-    setStatusMessage(appMessage, "error", "File could not be found.");
-    return;
-  }
-
-  if (!window.confirm(`Are you sure you want to delete "${target.name}"?`)) {
-    return;
-  }
-
-  student.files = student.files.filter((file) => file.id !== fileId);
-  renderStudentDetail();
-  renderGlobalSearchResults();
-  updateDashboardStats();
-  setStatusMessage(appMessage, "success", "File deleted successfully.");
-}
-
-function updateStudentStatus(nextStatus) {
-  if (!canManageStudents()) {
-    setStatusMessage(appMessage, "error", "Only admin can update student status.");
-    return;
-  }
-
-  const student = getCurrentStudent();
-  if (!student) return;
-
-  student.status = nextStatus;
-  student.lastUpdated = getTodayLabel();
-  renderStudents();
-  renderStudentDetail();
-  renderGlobalSearchResults();
-  setStatusMessage(appMessage, "success", "Student status updated.");
-}
-
-loginForm.addEventListener("submit", (event) => {
+mainLoginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  loginButton.disabled = true;
-  loginButton.textContent = "Signing in...";
-  handleLogin(usernameInput.value, passwordInput.value);
-  loginButton.disabled = false;
-  loginButton.textContent = "Login";
-});
+  clearMessage(mainLoginMessage);
+  setLoading(mainLoginButton, "Signing in...", true);
 
-logoutButton.addEventListener("click", () => {
-  clearSession();
-  state.user = null;
-  state.country = "";
-  state.course = "";
-  state.studentId = "";
-  globalSearchInput.value = "";
-  globalSearchResults.hidden = true;
-  globalSearchResults.innerHTML = "";
-  updateHeader();
-  syncRolePermissions();
-  clearStatusMessage(appMessage);
-  clearStatusMessage(loginMessage);
-  showScreen("login");
+  try {
+    const payload = await apiRequest("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({
+        role: roleInput.value,
+        username: usernameInput.value.trim(),
+        password: passwordInput.value
+      })
+    });
+
+    state.user = payload.user;
+    state.selectedCountry = payload.selected_country || "";
+    state.countryAuthenticated = Boolean(payload.country_authenticated);
+    state.activeCountry = isAdmin() ? (state.selectedCountry || "") : "";
+    newStudentButton.hidden = !isAdmin();
+    studentCountryInput.disabled = !isAdmin();
+    mainLoginForm.reset();
+    resetAutoLogoutTimer();
+
+    if (isAdmin()) {
+      await loadDashboard();
+      showScreen("app");
+      return;
+    }
+
+    renderCountrySelection();
+    showScreen("countrySelection");
+  } catch (error) {
+    setMessage(mainLoginMessage, "error", error.message);
+  } finally {
+    setLoading(mainLoginButton, "Signing in...", false);
+  }
 });
 
 countryGrid.addEventListener("click", (event) => {
-  if (!ensureAuthenticated()) return;
   const button = event.target.closest("[data-country]");
   if (!button) return;
-  openCoursesView(button.dataset.country);
+  state.pendingCountry = button.dataset.country;
+  countryLoginTitle.textContent = `${state.pendingCountry} Login`;
+  countryLoginSubtitle.textContent = `Enter the country credentials for ${state.pendingCountry}.`;
+  clearMessage(countryLoginMessage);
+  countryLoginForm.reset();
+  showScreen("countryLogin");
 });
 
-courseGrid.addEventListener("click", (event) => {
-  if (!ensureAuthenticated()) return;
-  const button = event.target.closest("[data-course]");
-  if (!button) return;
-  openStudentsView(button.dataset.course);
+countrySelectionLogoutButton.addEventListener("click", () => logout(false));
+backToCountriesButton.addEventListener("click", () => showScreen("countrySelection"));
+logoutButton.addEventListener("click", () => logout(false));
+
+countryLoginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  clearMessage(countryLoginMessage);
+  setLoading(countryLoginButton, "Signing in...", true);
+
+  try {
+    const payload = await apiRequest("/api/auth/country-login", {
+      method: "POST",
+      body: JSON.stringify({
+        country: state.pendingCountry,
+        username: countryUsernameInput.value.trim(),
+        password: countryPasswordInput.value
+      })
+    });
+
+    state.selectedCountry = payload.selected_country;
+    state.countryAuthenticated = Boolean(payload.country_authenticated);
+    state.activeCountry = payload.selected_country;
+    resetAutoLogoutTimer();
+    await loadDashboard();
+    showScreen("app");
+  } catch (error) {
+    setMessage(countryLoginMessage, "error", error.message);
+  } finally {
+    setLoading(countryLoginButton, "Signing in...", false);
+  }
+});
+
+countryFilterSelect.addEventListener("change", () => {
+  safeLoad(async () => {
+    state.activeCountry = countryFilterSelect.value;
+    state.selectedStudentId = "";
+    await loadDashboard();
+  });
+});
+
+searchInput.addEventListener("input", () => {
+  safeLoad(loadDashboard);
+});
+
+newStudentButton.addEventListener("click", () => {
+  clearMessage(appMessage);
+  openStudentForm("create");
+});
+
+cancelStudentFormButton.addEventListener("click", () => {
+  resetStudentForm();
+});
+
+studentForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  clearMessage(appMessage);
+  setLoading(saveStudentButton, "Saving...", true);
+
+  const payload = {
+    name: studentNameInput.value.trim(),
+    phone: studentPhoneInput.value.trim(),
+    email: studentEmailInput.value.trim(),
+    country: studentCountryInput.value,
+    course: studentCourseInput.value.trim(),
+    status: studentStatusInput.value
+  };
+
+  try {
+    let result;
+    if (studentFormMode.value === "edit") {
+      result = await apiRequest(`/api/students/${encodeURIComponent(studentFormStudentId.value)}`, {
+        method: "PUT",
+        body: JSON.stringify(payload)
+      });
+    } else {
+      result = await apiRequest("/api/students", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    }
+
+    resetStudentForm();
+    await refreshAfterMutation(result.student.student_id);
+    setMessage(appMessage, "success", "Student saved successfully.");
+  } catch (error) {
+    setMessage(appMessage, "error", error.message);
+  } finally {
+    setLoading(saveStudentButton, "Saving...", false);
+  }
 });
 
 studentsTableBody.addEventListener("click", (event) => {
-  if (!ensureAuthenticated()) return;
-  const button = event.target.closest("[data-student-id]");
+  const button = event.target.closest("[data-open-student]");
   if (!button) return;
-  openStudentDetail(button.dataset.studentId);
-});
-
-filesTableBody.addEventListener("click", (event) => {
-  if (!ensureAuthenticated()) return;
-  const button = event.target.closest("[data-action]");
-  if (!button) return;
-
-  if (button.dataset.action === "download") {
-    setStatusMessage(appMessage, "success", "Download started.");
-    return;
-  }
-
-  if (button.dataset.action === "delete") {
-    deleteFile(button.dataset.fileId);
-  }
-});
-
-studentSearchInput.addEventListener("input", () => {
-  if (!ensureAuthenticated()) return;
-  renderStudents();
-});
-
-fileSearchInput.addEventListener("input", () => {
-  if (!ensureAuthenticated()) return;
-  renderStudentDetail();
-});
-
-globalSearchInput.addEventListener("input", () => {
-  if (!ensureAuthenticated()) return;
-
-  renderGlobalSearchResults();
-
-  const activeView = document.querySelector(".view.active")?.dataset.view;
-  if (activeView === "students") {
-    renderStudents();
-  }
-
-  if (activeView === "student-detail") {
-    renderStudentDetail();
-  }
-});
-
-globalSearchResults.addEventListener("click", (event) => {
-  if (!ensureAuthenticated()) return;
-  const button = event.target.closest("[data-search-student-id]");
-  if (!button) return;
-
-  state.country = button.dataset.searchCountry;
-  state.course = button.dataset.searchCourse;
-  renderCourses();
-  openStudentDetail(button.dataset.searchStudentId);
-  globalSearchResults.hidden = true;
-});
-
-studentStatusSelect.addEventListener("change", () => {
-  if (!ensureAuthenticated()) return;
-  updateStudentStatus(studentStatusSelect.value);
-});
-
-document.addEventListener("click", (event) => {
-  if (event.target.closest(".topbar-search")) return;
-  if (!globalSearchInput.value.trim()) return;
-  globalSearchResults.hidden = true;
-});
-
-uploadButton.addEventListener("click", () => {
-  if (!ensureAuthenticated()) return;
-  uploadFileForStudent();
-});
-
-addStudentButton.addEventListener("click", () => {
-  if (!ensureAuthenticated()) return;
-  addStudent();
+  safeLoad(() => loadStudentDetail(button.dataset.openStudent));
 });
 
 editStudentButton.addEventListener("click", () => {
-  if (!ensureAuthenticated()) return;
-  editStudent();
+  const student = selectedStudent();
+  if (!student) return;
+  openStudentForm("edit", student);
 });
 
-crumbHome.addEventListener("click", () => {
-  if (!ensureAuthenticated()) return;
-  openCountriesView();
+deleteStudentButton.addEventListener("click", () => {
+  const student = selectedStudent();
+  if (!student) return;
+  if (!window.confirm(`Delete student ${student.student_id}?`)) return;
+
+  safeLoad(async () => {
+    await apiRequest(`/api/students/${encodeURIComponent(student.student_id)}`, {
+      method: "DELETE"
+    });
+    state.selectedStudentId = "";
+    await refreshAfterMutation();
+    setMessage(appMessage, "success", "Student deleted successfully.");
+  });
 });
 
-crumbCountry.addEventListener("click", () => {
-  if (!ensureAuthenticated() || !state.country) return;
-  openCoursesView(state.country);
+detailStatusSelect.addEventListener("change", () => {
+  const student = selectedStudent();
+  if (!student || !isAdmin()) return;
+
+  safeLoad(async () => {
+    await apiRequest(`/api/students/${encodeURIComponent(student.student_id)}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: detailStatusSelect.value })
+    });
+    await refreshAfterMutation(student.student_id);
+    setMessage(appMessage, "success", "Student status updated.");
+  });
 });
 
-crumbCourse.addEventListener("click", () => {
-  if (!ensureAuthenticated() || !state.country || !state.course) return;
-  openStudentsView(state.course);
+uploadFileButton.addEventListener("click", () => {
+  const student = selectedStudent();
+  if (!student) {
+    setMessage(appMessage, "error", "Select a student first.");
+    return;
+  }
+  if (!fileInput.files.length) {
+    setMessage(appMessage, "error", "Choose a file before uploading.");
+    return;
+  }
+
+  safeLoad(async () => {
+    setLoading(uploadFileButton, "Uploading...", true);
+    const payload = new FormData();
+    payload.append("file", fileInput.files[0]);
+    await apiRequest(`/api/students/${encodeURIComponent(student.student_id)}/files`, {
+      method: "POST",
+      body: payload
+    });
+    fileInput.value = "";
+    await refreshAfterMutation(student.student_id);
+    setMessage(appMessage, "success", "File uploaded successfully.");
+  }).finally(() => {
+    setLoading(uploadFileButton, "Uploading...", false);
+  });
 });
 
-crumbStudent.addEventListener("click", () => {
-  if (!ensureAuthenticated() || !state.studentId) return;
-  openStudentDetail(state.studentId);
+filesTableBody.addEventListener("click", (event) => {
+  const student = selectedStudent();
+  if (!student) return;
+
+  const downloadButton = event.target.closest("[data-download-file]");
+  if (downloadButton) {
+    window.location.href = `/api/students/${encodeURIComponent(student.student_id)}/files/${downloadButton.dataset.downloadFile}/download`;
+    return;
+  }
+
+  const deleteButton = event.target.closest("[data-delete-file]");
+  if (!deleteButton) return;
+  if (!window.confirm("Delete this file?")) return;
+
+  safeLoad(async () => {
+    await apiRequest(`/api/students/${encodeURIComponent(student.student_id)}/files/${deleteButton.dataset.deleteFile}`, {
+      method: "DELETE"
+    });
+    await refreshAfterMutation(student.student_id);
+    setMessage(appMessage, "success", "File deleted successfully.");
+  });
 });
 
-backToCountriesButton.addEventListener("click", () => {
-  if (!ensureAuthenticated()) return;
-  openCountriesView();
-});
-
-backToStudentsButton.addEventListener("click", () => {
-  if (!ensureAuthenticated()) return;
-  openStudentsView(state.course);
-});
-
-viewAllStudentsButton.addEventListener("click", () => {
-  if (!ensureAuthenticated()) return;
-  openAllStudentsView();
-});
-
-backToHomeButton.addEventListener("click", () => {
-  if (!ensureAuthenticated()) return;
-  openCountriesView();
-});
-
-allStudentsSearchInput.addEventListener("input", () => {
-  if (!ensureAuthenticated()) return;
-  renderAllStudents();
-});
-
-allStudentsCountryFilter.addEventListener("change", () => {
-  if (!ensureAuthenticated()) return;
-  renderAllStudents();
-});
-
-allStudentsCourseFilter.addEventListener("change", () => {
-  if (!ensureAuthenticated()) return;
-  renderAllStudents();
-});
-
-allStudentsStatusFilter.addEventListener("change", () => {
-  if (!ensureAuthenticated()) return;
-  renderAllStudents();
-});
-
-allStudentsTableBody.addEventListener("click", (event) => {
-  if (!ensureAuthenticated()) return;
-  const button = event.target.closest("[data-student-id]");
-  if (!button) return;
-  
-  state.country = button.dataset.country;
-  state.course = button.dataset.course;
-  state.studentId = button.dataset.studentId;
-  renderCourses();
-  openStudentDetail(button.dataset.studentId);
-});
-
-const session = getSession();
-if (session?.user && users[session.user.username]) {
-  state.user = {
-    username: session.user.username,
-    role: users[session.user.username].role
-  };
-  updateHeader();
-  syncRolePermissions();
-  updateDashboardStats();
-  renderCountries();
-  openCountriesView();
-  showScreen("app");
-} else {
-  syncRolePermissions();
-  showScreen("login");
-}
+populateCountryOptions();
+renderCountrySelection();
+bindActivityListeners();
+restoreSession();

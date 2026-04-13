@@ -1,7 +1,8 @@
 import logging
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, redirect, request, session, url_for
 from werkzeug.exceptions import HTTPException
 
 from .config import BASE_DIR, Config
@@ -31,16 +32,43 @@ def create_app(test_config=None):
     from .auth import auth_bp
     from .students import students_bp
     from .files import files_bp
-    from .portal import portal_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(students_bp, url_prefix="/api")
     app.register_blueprint(files_bp, url_prefix="/api")
-    app.register_blueprint(portal_bp)
+
+    @app.before_request
+    def manage_session_timeout():
+        user = session.get("user")
+        if not user:
+            return None
+
+        session.permanent = True
+        now = datetime.now(timezone.utc)
+        last_activity_raw = session.get("last_activity")
+        if last_activity_raw:
+            try:
+                last_activity = datetime.fromisoformat(last_activity_raw)
+            except ValueError:
+                session.clear()
+                return None
+            if now - last_activity > app.permanent_session_lifetime:
+                app.logger.info("Session expired due to inactivity for username=%s", user.get("username"))
+                session.clear()
+                if request.path.startswith("/api/"):
+                    return jsonify({"error": "Session expired due to inactivity"}), 401
+                return None
+        session["last_activity"] = now.isoformat()
+        session.modified = True
+        return None
 
     @app.get("/")
     def index():
         return app.send_static_file("index.html")
+
+    @app.get("/portal")
+    def portal_redirect():
+        return redirect(url_for("index"))
 
     @app.get("/favicon.ico")
     def favicon():

@@ -1,17 +1,18 @@
 # SpotOn File Portal Backend
 
-Flask backend for the internal SpotOn File Portal, including a multi-level `/portal` login flow for admin and country-based staff access.
+Flask backend and frontend for the internal SpotOn File Portal, with the main login served at `/`.
 
 ## Features
 
-- Multi-level session-based login under `/portal`
-- Main role login for `Admin` and `Staff`
-- Country selection and second-step country login for staff
-- Country-restricted API access for staff sessions
-- Admin country switching with full access across all countries
+- Main login at `/` for `Admin` and `Staff`
+- Staff flow: main login -> country selection -> country login
+- 6-hour inactivity timeout with automatic session expiry
+- Country-restricted data access for staff sessions
+- Admin country switching, student edit/delete, status updates, and full file control
+- Search by student ID, name, phone, and email
 - SQLite-backed student and file metadata
 - Per-student upload folders under `uploads/{student_id}/`
-- File upload, download, and admin-only delete
+- File upload/download for authenticated users and admin-only delete
 - Clear JSON error responses
 
 ## Default Users
@@ -39,9 +40,10 @@ venv\Scripts\python run.py
 - `POST /api/auth/logout`
 - `GET /api/auth/me`
 - `POST /api/students`
-- `GET /api/students?country=Georgia&course=MBBS`
+- `GET /api/students?country=Georgia&q=aarav`
 - `GET /api/students/<student_id>`
 - `PUT /api/students/<student_id>`
+- `DELETE /api/students/<student_id>`
 - `PATCH /api/students/<student_id>/status`
 - `POST /api/students/<student_id>/files`
 - `GET /api/students/<student_id>/files`
@@ -55,4 +57,5 @@ venv\Scripts\python run.py
   - Uzbekistan -> `UZB-1001`
   - Tajikistan -> `TAJ-1001`
 - Staff sessions must complete country login before they can access protected API endpoints.
+- Sessions expire after 6 hours of inactivity.
 - Allowed file types are configured in `spoton_portal/config.py`

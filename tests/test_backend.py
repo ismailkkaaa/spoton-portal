@@ -1,6 +1,7 @@
 import io
 import shutil
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from spoton_portal import create_app
@@ -110,7 +111,7 @@ class SpotOnBackendTests(unittest.TestCase):
         self.country_login("Georgia")
         forbidden = self.client.patch(
             f"/api/students/{student_id}/status",
-            json={"status": "Visa Approved"},
+            json={"status": "Pending"},
         )
         self.assertEqual(forbidden.status_code, 403)
 
@@ -121,10 +122,10 @@ class SpotOnBackendTests(unittest.TestCase):
         self.login()
         updated = self.client.patch(
             f"/api/students/{student_id}/status",
-            json={"status": "Visa Approved"},
+            json={"status": "Pending"},
         )
         self.assertEqual(updated.status_code, 200)
-        self.assertEqual(updated.get_json()["student"]["status"], "Visa Approved")
+        self.assertEqual(updated.get_json()["student"]["status"], "Pending")
 
     def test_file_upload_download_delete_and_staff_restriction(self):
         self.login()
@@ -180,56 +181,61 @@ class SpotOnBackendTests(unittest.TestCase):
         missing_files = self.client.get("/api/students/NOPE-9999/files")
         self.assertEqual(missing_files.status_code, 404)
 
-    def test_portal_multilevel_login_and_country_restrictions(self):
+    def test_root_login_entry_country_login_and_portal_redirect(self):
         self.login()
         self.create_student()
         self.client.post("/api/auth/logout")
 
-        login_page = self.client.get("/portal")
+        login_page = self.client.get("/")
         self.assertEqual(login_page.status_code, 200)
+        self.assertIn(b"Main Login", login_page.data)
 
-        admin_login = self.client.post(
-            "/portal",
-            data={"role": "Admin", "username": "admin", "password": "admin123"},
-            follow_redirects=False,
+        portal_redirect = self.client.get("/portal", follow_redirects=False)
+        self.assertEqual(portal_redirect.status_code, 302)
+        self.assertEqual(portal_redirect.headers["Location"], "/")
+
+        staff_login = self.login_with_role("staff", "staff123", "Staff")
+        self.assertEqual(staff_login.status_code, 200)
+
+        me_before_country = self.client.get("/api/auth/me")
+        self.assertEqual(me_before_country.status_code, 200)
+        self.assertFalse(me_before_country.get_json()["country_authenticated"])
+
+        country_login = self.country_login("Georgia")
+        self.assertEqual(country_login.status_code, 200)
+        self.assertEqual(country_login.get_json()["selected_country"], "Georgia")
+
+    def test_search_delete_student_and_session_timeout(self):
+        self.login()
+        created = self.create_student()
+        student_id = created.get_json()["student"]["student_id"]
+        self.create_student(
+            name="Second Student",
+            phone="+998901112222",
+            email="second@example.com",
+            country="Uzbekistan",
+            course="MBBS",
         )
-        self.assertEqual(admin_login.status_code, 302)
-        self.assertIn("/portal/admin/dashboard", admin_login.headers["Location"])
 
-        admin_dashboard = self.client.get("/portal/admin/dashboard?country=Georgia")
-        self.assertEqual(admin_dashboard.status_code, 200)
-        self.assertIn(b"Current country: <strong>Georgia</strong>", admin_dashboard.data)
+        filtered = self.client.get("/api/students?country=Georgia&q=aarav")
+        self.assertEqual(filtered.status_code, 200)
+        self.assertEqual(len(filtered.get_json()["students"]), 1)
+        self.assertEqual(filtered.get_json()["students"][0]["student_id"], student_id)
 
-        self.client.post("/portal/logout")
-        staff_login = self.client.post(
-            "/portal",
-            data={"role": "Staff", "username": "staff", "password": "staff123"},
-            follow_redirects=False,
-        )
-        self.assertEqual(staff_login.status_code, 302)
-        self.assertEqual(staff_login.headers["Location"], "/portal/countries")
+        deleted = self.client.delete(f"/api/students/{student_id}")
+        self.assertEqual(deleted.status_code, 200)
 
-        country_select = self.client.get("/portal/countries")
-        self.assertEqual(country_select.status_code, 200)
-        self.assertIn(b"Georgia", country_select.data)
-        self.assertIn(b"Uzbekistan", country_select.data)
-        self.assertIn(b"Tajikistan", country_select.data)
+        missing = self.client.get(f"/api/students/{student_id}")
+        self.assertEqual(missing.status_code, 404)
 
-        country_login = self.client.post(
-            "/portal/georgia/login",
-            data={"username": "georgia_staff", "password": "geo123"},
-            follow_redirects=False,
-        )
-        self.assertEqual(country_login.status_code, 302)
-        self.assertEqual(country_login.headers["Location"], "/portal/georgia/dashboard")
+        with self.client.session_transaction() as session:
+            session["user"] = {"username": "admin", "role": "Admin"}
+            session["country_authenticated"] = True
+            session["last_activity"] = (datetime.now(timezone.utc) - timedelta(hours=7)).isoformat()
 
-        georgia_dashboard = self.client.get("/portal/georgia/dashboard")
-        self.assertEqual(georgia_dashboard.status_code, 200)
-        self.assertIn(b"Current country: <strong>Georgia</strong>", georgia_dashboard.data)
-
-        blocked_other_country = self.client.get("/portal/uzbekistan/dashboard", follow_redirects=False)
-        self.assertEqual(blocked_other_country.status_code, 302)
-        self.assertEqual(blocked_other_country.headers["Location"], "/portal/georgia/dashboard")
+        expired = self.client.get("/api/auth/me")
+        self.assertEqual(expired.status_code, 401)
+        self.assertIn("Session expired", expired.get_json()["error"])
 
 
 if __name__ == "__main__":

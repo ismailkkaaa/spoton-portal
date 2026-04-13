@@ -1,5 +1,7 @@
 from flask import Blueprint, current_app, jsonify, request
+from pathlib import Path
 from sqlite3 import IntegrityError
+import shutil
 
 from .db import get_db, utc_now_iso
 from .utils import (
@@ -142,6 +144,7 @@ def add_student():
 def get_students():
     requested_country = request.args.get("country", "").strip()
     course = request.args.get("course", "").strip()
+    search = request.args.get("q", "").strip().lower()
     country, country_error = resolve_country_scope(requested_country)
     if country_error:
         return country_error
@@ -155,6 +158,17 @@ def get_students():
     if course:
         query += " AND course = ?"
         params.append(course)
+    if search:
+        query += """
+            AND (
+                LOWER(student_id) LIKE ?
+                OR LOWER(name) LIKE ?
+                OR LOWER(phone) LIKE ?
+                OR LOWER(email) LIKE ?
+            )
+        """
+        like_term = f"%{search}%"
+        params.extend([like_term, like_term, like_term, like_term])
 
     query += " ORDER BY last_updated DESC, id DESC"
     rows = get_db().execute(query, tuple(params)).fetchall()
@@ -263,3 +277,23 @@ def update_student_status(student_id):
             "student": student_response_payload(updated),
         }
     )
+
+
+@students_bp.delete("/students/<student_id>")
+@require_role("Admin")
+@safe_route
+def delete_student(student_id):
+    row, error = fetch_student_or_404(student_id)
+    if error:
+        return error
+
+    db = get_db()
+    db.execute("DELETE FROM students WHERE student_id = ?", (student_id,))
+    db.commit()
+
+    upload_folder = Path(current_app.config["UPLOAD_FOLDER"]) / student_id
+    if upload_folder.exists():
+        shutil.rmtree(upload_folder, ignore_errors=True)
+
+    current_app.logger.info("Student deleted student_id=%s", student_id)
+    return jsonify({"message": "Student deleted successfully", "student_id": row["student_id"]})
