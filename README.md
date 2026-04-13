@@ -1,20 +1,28 @@
 # SpotOn File Portal Backend
 
-Flask backend for the internal SpotOn File Portal.
+Flask backend for the internal SpotOn File Portal, including a multi-level `/portal` login flow for admin and country-based staff access.
 
 ## Features
 
-- Simple session-based login for `Admin` and `Staff`
+- Multi-level session-based login under `/portal`
+- Main role login for `Admin` and `Staff`
+- Country selection and second-step country login for staff
+- Country-restricted API access for staff sessions
+- Admin country switching with full access across all countries
 - SQLite-backed student and file metadata
-- Country/course filtered student listing
 - Per-student upload folders under `uploads/{student_id}/`
 - File upload, download, and admin-only delete
 - Clear JSON error responses
 
 ## Default Users
 
-- `admin` / `admin123`
-- `staff` / `staff123`
+- Main login:
+  - `admin` / `admin123`
+  - `staff` / `staff123`
+- Country login:
+  - Georgia: `georgia_staff` / `geo123`
+  - Uzbekistan: `uzbekistan_staff` / `uzb123`
+  - Tajikistan: `tajikistan_staff` / `taj123`
 
 ## Setup
 
@@ -27,6 +35,7 @@ venv\Scripts\python run.py
 ## API Overview
 
 - `POST /api/auth/login`
+- `POST /api/auth/country-login`
 - `POST /api/auth/logout`
 - `GET /api/auth/me`
 - `POST /api/students`
@@ -45,4 +54,5 @@ venv\Scripts\python run.py
   - Georgia -> `GEO-1001`
   - Uzbekistan -> `UZB-1001`
   - Tajikistan -> `TAJ-1001`
+- Staff sessions must complete country login before they can access protected API endpoints.
 - Allowed file types are configured in `spoton_portal/config.py`

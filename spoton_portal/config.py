@@ -21,3 +21,8 @@ class Config:
         "admin": {"password": "admin123", "role": "Admin"},
         "staff": {"password": "staff123", "role": "Staff"},
     }
+    COUNTRY_USERS = {
+        "Georgia": {"username": "georgia_staff", "password": "geo123"},
+        "Uzbekistan": {"username": "uzbekistan_staff", "password": "uzb123"},
+        "Tajikistan": {"username": "tajikistan_staff", "password": "taj123"},
+    }

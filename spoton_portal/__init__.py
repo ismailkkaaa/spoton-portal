@@ -31,10 +31,12 @@ def create_app(test_config=None):
     from .auth import auth_bp
     from .students import students_bp
     from .files import files_bp
+    from .portal import portal_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(students_bp, url_prefix="/api")
     app.register_blueprint(files_bp, url_prefix="/api")
+    app.register_blueprint(portal_bp)
 
     @app.get("/")
     def index():

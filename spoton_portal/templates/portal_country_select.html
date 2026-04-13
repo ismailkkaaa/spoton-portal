@@ -1,0 +1,25 @@
+{% extends "portal_base.html" %}
+{% block title %}Country Selection{% endblock %}
+{% block body %}
+<main class="portal-shell">
+  <header class="portal-header">
+    <div>
+      <span class="portal-eyebrow">SpotOn File Portal</span>
+      <h1>Select Country</h1>
+      <p>Choose the country you want to access. A country-specific login is required next.</p>
+    </div>
+    <form method="post" action="{{ url_for('portal.portal_logout') }}">
+      <button type="submit" class="portal-button portal-button-secondary">Logout</button>
+    </form>
+  </header>
+
+  <section class="portal-grid">
+    {% for country in countries %}
+    <a class="portal-card portal-country-card" href="{{ url_for('portal.country_login', country_slug=country.slug) }}">
+      <strong>{{ country.name }}</strong>
+      <span>{% if selected_country == country.name %}Continue{% else %}Open{% endif %} country login</span>
+    </a>
+    {% endfor %}
+  </section>
+</main>
+{% endblock %}

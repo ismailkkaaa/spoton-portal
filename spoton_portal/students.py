@@ -4,10 +4,12 @@ from sqlite3 import IntegrityError
 from .db import get_db, utc_now_iso
 from .utils import (
     COUNTRY_PREFIXES,
+    ensure_country_access,
     find_duplicate_student,
     generate_student_id,
     json_error,
     safe_route,
+    resolve_country_scope,
     require_login,
     require_role,
     student_response_payload,
@@ -25,6 +27,9 @@ def fetch_student_or_404(student_id):
     ).fetchone()
     if not row:
         return None, json_error("Student not found", 404)
+    access_error = ensure_country_access(row["country"])
+    if access_error:
+        return None, access_error
     return row, None
 
 
@@ -33,11 +38,11 @@ def fetch_student_or_404(student_id):
 @safe_route
 def dashboard_summary():
     db = get_db()
-    country = request.args.get("country", "").strip()
+    requested_country = request.args.get("country", "").strip()
     course = request.args.get("course", "").strip()
-
-    if country and country not in COUNTRY_PREFIXES:
-        return json_error("Country is invalid")
+    country, country_error = resolve_country_scope(requested_country)
+    if country_error:
+        return country_error
 
     filters = []
     params = []
@@ -135,8 +140,11 @@ def add_student():
 @require_login
 @safe_route
 def get_students():
-    country = request.args.get("country", "").strip()
+    requested_country = request.args.get("country", "").strip()
     course = request.args.get("course", "").strip()
+    country, country_error = resolve_country_scope(requested_country)
+    if country_error:
+        return country_error
 
     query = "SELECT * FROM students WHERE 1=1"
     params = []

@@ -1,0 +1,35 @@
+{% extends "portal_base.html" %}
+{% block title %}{{ country }} Login{% endblock %}
+{% block body %}
+<main class="portal-shell portal-shell-centered">
+  <section class="portal-card portal-form-card">
+    <div class="portal-heading">
+      <span class="portal-eyebrow">Country Login</span>
+      <h1>{{ country }}</h1>
+      <p>Enter the credentials assigned for {{ country }} staff access.</p>
+    </div>
+
+    {% if error %}
+    <p class="portal-alert portal-alert-error">{{ error }}</p>
+    {% endif %}
+
+    <form method="post" class="portal-form">
+      <label class="portal-field">
+        <span>Username</span>
+        <input type="text" name="username" value="{{ username or '' }}" required>
+      </label>
+
+      <label class="portal-field">
+        <span>Password</span>
+        <input type="password" name="password" required>
+      </label>
+
+      <button type="submit" class="portal-button portal-button-primary">Login to {{ country }}</button>
+    </form>
+
+    <div class="portal-actions">
+      <a class="portal-link" href="{{ url_for('portal.country_selection') }}">Back to country selection</a>
+    </div>
+  </section>
+</main>
+{% endblock %}

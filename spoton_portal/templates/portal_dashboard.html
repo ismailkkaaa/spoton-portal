@@ -1,0 +1,98 @@
+{% extends "portal_base.html" %}
+{% block title %}{{ current_country }} Dashboard{% endblock %}
+{% block body %}
+<main class="portal-shell">
+  <header class="portal-header">
+    <div>
+      <span class="portal-eyebrow">SpotOn File Portal</span>
+      <h1>{{ "Admin Dashboard" if is_admin else "Country Dashboard" }}</h1>
+      <p>Current country: <strong>{{ current_country }}</strong></p>
+    </div>
+    <div class="portal-header-actions">
+      <div class="portal-user-chip">{{ user.username }} · {{ user.role }}</div>
+      <form method="post" action="{{ url_for('portal.portal_logout') }}">
+        <button type="submit" class="portal-button portal-button-secondary">Logout</button>
+      </form>
+    </div>
+  </header>
+
+  {% if is_admin %}
+  <section class="portal-card">
+    <div class="portal-section-head">
+      <div>
+        <h2>Country Switcher</h2>
+        <p>Admin can move across all countries from one dashboard.</p>
+      </div>
+      <form method="get" action="{{ url_for('portal.admin_dashboard') }}" class="portal-inline-form">
+        <label class="portal-field">
+          <span>Country</span>
+          <select name="country" onchange="this.form.submit()">
+            {% for country in countries %}
+            <option value="{{ country.name }}" {% if country.name == current_country %}selected{% endif %}>{{ country.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </form>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="portal-stats">
+    <article class="portal-card portal-stat-card">
+      <span class="portal-stat-label">Total Students</span>
+      <strong>{{ summary.students }}</strong>
+    </article>
+    <article class="portal-card portal-stat-card">
+      <span class="portal-stat-label">Total Files</span>
+      <strong>{{ summary.files }}</strong>
+    </article>
+    <article class="portal-card portal-stat-card">
+      <span class="portal-stat-label">Storage Used</span>
+      <strong>{{ summary.storage_bytes|storage_label }}</strong>
+    </article>
+  </section>
+
+  <section class="portal-card">
+    <div class="portal-section-head">
+      <div>
+        <h2>Recent Students</h2>
+        <p>Only records from {{ current_country }} are shown here.</p>
+      </div>
+      {% if not is_admin %}
+      <a class="portal-link" href="{{ url_for('portal.country_selection') }}">Change country</a>
+      {% endif %}
+    </div>
+
+    <div class="portal-table-wrap">
+      <table class="portal-table">
+        <thead>
+          <tr>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Course</th>
+            <th>Status</th>
+            <th>Files</th>
+            <th>Last Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in summary.recent_students %}
+          <tr>
+            <td>{{ student.student_id }}</td>
+            <td>{{ student.name }}</td>
+            <td>{{ student.course }}</td>
+            <td>{{ student.status }}</td>
+            <td>{{ student.file_count }}</td>
+            <td>{{ student.last_updated }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" class="portal-empty-row">No student records available for {{ current_country }}.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+{% endblock %}

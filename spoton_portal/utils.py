@@ -15,6 +15,11 @@ COUNTRY_PREFIXES = {
     "Uzbekistan": "UZB",
     "Tajikistan": "TAJ",
 }
+COUNTRY_SLUGS = {
+    "georgia": "Georgia",
+    "uzbekistan": "Uzbekistan",
+    "tajikistan": "Tajikistan",
+}
 
 COUNTRY_COURSES = {
     "Georgia": {"MBBS", "BSc Nursing", "BBA", "MBA"},
@@ -43,8 +48,11 @@ def json_error(message, status_code=400):
 def require_login(view_func):
     @wraps(view_func)
     def wrapped(*args, **kwargs):
-        if "user" not in session:
+        user = session.get("user")
+        if not user:
             return json_error("Authentication required", 401)
+        if user.get("role") == "Staff" and not session.get("country_authenticated"):
+            return json_error("Country login required", 403)
         return view_func(*args, **kwargs)
 
     return wrapped
@@ -93,6 +101,77 @@ def safe_route(view_func):
 
 def sanitize_text(value):
     return re.sub(r"\s+", " ", str(value or "").strip())
+
+
+def get_current_user():
+    return session.get("user")
+
+
+def get_user_role():
+    return (session.get("user") or {}).get("role")
+
+
+def is_admin_session():
+    return get_user_role() == "Admin"
+
+
+def is_staff_session():
+    return get_user_role() == "Staff"
+
+
+def country_from_slug(slug):
+    return COUNTRY_SLUGS.get(str(slug or "").strip().lower())
+
+
+def slug_for_country(country):
+    for slug, name in COUNTRY_SLUGS.items():
+        if name == country:
+            return slug
+    return ""
+
+
+def can_access_country(country):
+    if country not in COUNTRY_PREFIXES:
+        return False
+    user = get_current_user()
+    if not user:
+        return False
+    if user.get("role") == "Admin":
+        return True
+    return session.get("country_authenticated") and session.get("selected_country") == country
+
+
+def ensure_country_access(country):
+    if country not in COUNTRY_PREFIXES:
+        return json_error("Country is invalid")
+    if not get_current_user():
+        return json_error("Authentication required", 401)
+    if not can_access_country(country):
+        return json_error("You do not have permission to access this country", 403)
+    return None
+
+
+def resolve_country_scope(requested_country=None):
+    user = get_current_user()
+    if not user:
+        return None, json_error("Authentication required", 401)
+
+    if user.get("role") == "Admin":
+        if requested_country:
+            if requested_country not in COUNTRY_PREFIXES:
+                return None, json_error("Country is invalid")
+            return requested_country, None
+        return None, None
+
+    if not session.get("country_authenticated"):
+        return None, json_error("Country login required", 403)
+
+    selected_country = session.get("selected_country")
+    if selected_country not in COUNTRY_PREFIXES:
+        return None, json_error("Country is invalid")
+    if requested_country and requested_country != selected_country:
+        return None, json_error("You do not have permission to access this country", 403)
+    return selected_country, None
 
 
 def validate_student_payload(data, require_all=True):
